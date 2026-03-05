@@ -107,27 +107,41 @@ keep going
 ```
 
 ---
-
 # 🏗️ Architecture
 
 ## Chatbot Processing Pipeline
+
 ```mermaid
 flowchart TD
+    %% User input
+    User[User Input]:::user --> InputGuard["TrustGuard Input Validation<br/>PII Detection"]:::guard
+    InputGuard --> Memory["Conversation Memory<br/>Store History"]:::memory
+    Memory --> LLM["HuggingFace LLM<br/>openai/gpt-oss-20b"]:::llm
+    LLM --> ContinuationLogic["Continuation Logic<br/>Do you want more details?"]:::logic
+    ContinuationLogic --> OutputGuard["TrustGuard Output Validation<br/>PII Detection"]:::guard
+    OutputGuard --> FinalResponse["Final Bot Response"]:::response
+    
+    %% Continuation loop
+    ContinuationLogic -->|Yes| LLM
+    
+    %% Asynchronous memory update
+    FinalResponse --> MemoryUpdate["Memory Update (Async)"]:::memory
+    MemoryUpdate --> Memory
+    
+    %% Feedback / moderation loop
+    OutputGuard --> Moderation["Feedback & Moderation Loop"]:::guard
+    Moderation --> MemoryUpdate
 
-A[User Input]:::user --> B[TrustGuard Input Validation<br/>PII Detection]:::guard
-B --> C[Conversation Memory<br/>Store History]:::memory
-C --> D[HuggingFace LLM<br/>openai/gpt-oss-20b]:::llm
-D --> E[Continuation Logic<br/>Do you want more details?]:::logic
-E --> F[TrustGuard Output Validation<br/>PII Detection]:::guard
-F --> G[Final Bot Response]:::response
+    %% Node classes
+    classDef user fill:#4CAF50,color:#fff,stroke:#333,stroke-width:2px;
+    classDef guard fill:#FF9800,color:#fff,stroke:#333,stroke-width:2px;
+    classDef memory fill:#2196F3,color:#fff,stroke:#333,stroke-width:2px;
+    classDef llm fill:#9C27B0,color:#fff,stroke:#333,stroke-width:2px;
+    classDef logic fill:#03A9F4,color:#fff,stroke:#333,stroke-width:2px;
+    classDef response fill:#2E7D32,color:#fff,stroke:#333,stroke-width:2px;
 
-classDef user fill:#4CAF50,color:#fff,stroke:#333,stroke-width:2px;
-classDef guard fill:#FF9800,color:#fff,stroke:#333,stroke-width:2px;
-classDef memory fill:#2196F3,color:#fff,stroke:#333,stroke-width:2px;
-classDef llm fill:#9C27B0,color:#fff,stroke:#333,stroke-width:2px;
-classDef logic fill:#03A9F4,color:#fff,stroke:#333,stroke-width:2px;
-classDef response fill:#2E7D32,color:#fff,stroke:#333,stroke-width:2px;
 ```
+
 ## Continuation Flow
 
 ```
